@@ -1,8 +1,8 @@
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  Quantum Approximate Optimisation Algrithm
+#  Quantum Approximate Optimisation Algorithm
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-''' Inspired on Grove's pyQuil implementation. '''
+''' Inspired by Grove's pyQuil implementation. '''
 
 import projectq as pq
 from projectq import MainEngine
@@ -198,12 +198,12 @@ if __name__ == "__main__":
     G = nx.Graph()
     G.add_nodes_from(list(range(0, n, 1)))
 
-    # tuple is (i, j, weight) where (i, j) is the edge
+    # tuple is (i, j) where (i, j) is the edge
     # This line just tells our graph how the edges are connected to each other
-    edge_list = [(0, 1, 1.0), (1, 2, 1.0)]
+    edge_list = [(0, 1), (1, 2)]
 
     # Feed the edges to our graph:
-    G.add_weighted_edges_from(edge_list)
+    G.add_edges_from(edge_list)
 
     # Now let's make our cost function (mixer handled as default argument already for QAOA MaxCut)
     cost_example = QubitOperator('', 0.5) + QubitOperator('Z0 Z1', -0.5) + QubitOperator('', 0.5) + QubitOperator('Z1 Z2', -0.5)
