@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
   # tuple is (i, j) where (i, j) is the edge
   # This line just tells our graph how the edges are connected to each other
-    edge_list = [(0, 1), (1, 2)]
+  edge_list = [(0, 1), (1, 2)]
 
   # Feed the edges to our graph:
   G.add_edges_from(edge_list)
