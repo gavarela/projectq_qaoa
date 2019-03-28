@@ -34,5 +34,40 @@ def maxcut_mixer_ham(graph):
     operator = 'X' + str(i)
     ham += QubitOperator(operator)
   return ham
-    
-    
+
+
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                 Test
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if __name__ == "__main__":
+  
+  # This test will simply construct a MaxCut cost and mixer Hamiltonian
+  # for the following triangular graph:  0-1-2-0
+  
+  # Just import networkx, useful for making graphs with edges and nodes
+  import networkx as nx
+  
+  # Construct a graph with n nodes
+  n = 3
+  G = nx.Graph()
+  G.add_nodes_from(list(range(0, n, 1)))
+
+  # tuple is (i, j) where (i, j) is the edge
+  # This line just tells our graph how the edges are connected to each other
+    edge_list = [(0, 1), (1, 2)]
+
+  # Feed the edges to our graph:
+  G.add_edges_from(edge_list)
+  
+  # Construct a mixer and a cost!  
+  G_maxcut_cost = maxcut_cost_ham(graph=G)
+  G_maxcut_mixer = maxcut_mixer_ham(graph=G)
+  
+  print("Cost Hamiltonian: {}\nMixer Hamiltonian:{}".format(G_maxcut_cost, G_maxcut_mixer))
+  
+
+
