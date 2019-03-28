@@ -6,10 +6,12 @@
 
 import projectq as pq
 from projectq import MainEngine
-from projectq.ops import QubitOperator, Measure, All, H
+from projectq.ops import QubitOperator, Measure, All, H, TimeEvolution
 
 import numpy as np, cmath
 from scipy.optimize import minimize
+
+from VQE import VQE
 
 
 class QAOA(object):
@@ -72,13 +74,13 @@ class QAOA(object):
         self.mixer = mixer or QubitOperator(' '.join(['X' + str(i) for i in range(self.n_qubits)]))
         
         self.n_steps = n_steps
-        self.betas = init_betas or np.random.uniform(0, np.pi, self.n_steps)
-        self.gammas = init_gammas or np.random.uniform(0, 2*np.pi, self.n_steps)
+        self.betas = np.array(init_betas) or np.random.uniform(0, np.pi, self.n_steps)
+        self.gammas = np.array(init_gammas) or np.random.uniform(0, 2*np.pi, self.n_steps)
         
         # Store values of arguments
         self.cost = cost
         
-        self.engine = engine
+        self.engine = engine 
         
         self.minimiser = minimiser
         self.min_args = min_args
@@ -87,22 +89,22 @@ class QAOA(object):
         self.vqe_run_kwargs = vqe_run_kwargs
         
         # Check types
-        types = [QubitOperator, QubitOperator, int, MainEngine, int, list, list]
+        types = [QubitOperator, QubitOperator, int, MainEngine, int]#, np.ndarray, np.ndarray]
         args = [self.cost, self.mixer, self.n_steps, 
-                self.engine, self.n_qubits, 
-                self.init_betas, self.init_gammas]
-        argstr = ['cost', 'mixer', 'n_steps', 'engine', 'n_qubits', 
-                  'init_betas', 'init_gammas']
+                self.engine, self.n_qubits]#, 
+        #        self.betas, self.gammas]
+        argstr = ['cost', 'mixer', 'n_steps', 'engine', 'n_qubits']#, 
+                  #'init_betas', 'init_gammas']
         
         for i, arg in enumerate(args):
             if not isinstance(arg, types[i]):
                 raise TypeError('Argument `%s` provided to expectation must be a %s' % (argstr[i], types[i].__name__))
         
-        if self.steps <= 0: raise ValueError('Argument `steps` must be positive.')
+        if self.n_steps <= 0: raise ValueError('Argument `n_steps` must be positive.')
         if self.n_qubits <= 0: raise ValueError('Argument `n_qubits` must be positive.')
         
-        if len(self.betas) != self.steps: raise ValueError('Argument `init_betas` must be a list of length equal to argument `n_steps`.')
-        if len(self.gammas) != self.steps: raise ValueError('Argument `init_gammas` must be a list of length equal to argument `n_steps`.')
+        if len(self.betas) != self.n_steps: raise ValueError('Argument `init_betas` must be a list of length equal to argument `n_steps`.')
+        if len(self.gammas) != self.n_steps: raise ValueError('Argument `init_gammas` must be a list of length equal to argument `n_steps`.')
             
         if not callable(self.init_state):
             raise TypeError('Argument `init_state` must be a function of a single parameter: a QC engine.')
@@ -125,7 +127,7 @@ class QAOA(object):
         
         qureg = self.init_state(eng)
         
-        for i in range(n_steps):
+        for i in range(self.n_steps):
             TimeEvolution(gammas[i], self.cost ) | qureg
             TimeEvolution(betas[i] , self.mixer) | qureg
         
@@ -180,8 +182,49 @@ class QAOA(object):
 ## ~~~~
 
 if __name__ == "__main__":
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # For this test, let's do a simple MaxCut example with the following graph:
+    # 0-1-2
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    # Just import networkx, useful for making graphs with edges and nodes
+    # import time to time our operations
+    import networkx as nx
+    import time
+
+    # Construct a graph with n nodes
+    n = 3
+    G = nx.Graph()
+    G.add_nodes_from(list(range(0, n, 1)))
+
+    # tuple is (i, j, weight) where (i, j) is the edge
+    # This line just tells our graph how the edges are connected to each other
+    edge_list = [(0, 1, 1.0), (1, 2, 1.0)]
+
+    # Feed the edges to our graph:
+    G.add_weighted_edges_from(edge_list)
+
+    # Now let's make our cost function (mixer handled as default argument already for QAOA MaxCut)
+    cost_example = QubitOperator('', 0.5) + QubitOperator('Z0 Z1', -0.5) + QubitOperator('', 0.5) + QubitOperator('Z1 Z2', -0.5)
+
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Put it all together, create a QAOA instance
+    # Use default initil state and mixer, put in our own cost
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    eng_example = MainEngine()
+    inst = QAOA(cost = cost_example, engine = eng_example, n_qubits = 3, vqe_run_kwargs = {'verbose': 1, 'draws': 100})
     
-    # Do some simple max cut here to test...
+    start = time.time()
+    beta, gamma = inst.solve_angles()
+    end = time.time()
+    print("Beta: {}, Gamma: {}, Time: {}".format(beta, gamma, end - start))
+    
+    
+    
+    
+    
     
     
     
