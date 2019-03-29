@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
   # tuple is (i, j) where (i, j) is the edge
   # This line just tells our graph how the edges are connected to each other
-  edge_list = [(0, 1), (1, 2)]
+  edge_list = [(0, 1), (1, 2), (2, 0)]
 
   # Feed the edges to our graph:
   G.add_edges_from(edge_list)
@@ -67,7 +67,7 @@ if __name__ == "__main__":
   G_maxcut_cost = maxcut_cost_ham(graph=G)
   G_maxcut_mixer = maxcut_mixer_ham(graph=G)
   
-  print("Cost Hamiltonian: {}\nMixer Hamiltonian:{}".format(G_maxcut_cost, G_maxcut_mixer))
+  print("Cost Hamiltonian:\n{}\nMixer Hamiltonian:\n{}".format(G_maxcut_cost, G_maxcut_mixer))
   
 
 
