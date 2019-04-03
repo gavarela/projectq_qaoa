@@ -1,5 +1,5 @@
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  Variational QUantum Eigensolver
+#  Variational Quantum Eigensolver
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ''' Inspired on Grove's pyQuil implementation. '''
@@ -39,25 +39,25 @@ class VQE(object):
             callback = 'callback', full_output = False):
         ''' Main function; applies the VQE algorithm with the given parameters and arguments using the minimising function set up in self.__init__(...). Finds the parameters that create a state using \ansatz with the lowest possible expectation value for the operator \hamiltonian.
             
-            Params:
-            
-            \ansatz : (function: params, engine -> qureg) function that prepares the state whose expectation in \hamiltonian we want to calculate, given parameters and an engine. Should return a qubit register created using the provided engine with the state prepared.
-            
-            \hamiltonian : (QubitOperator) operator for which we want to calculate the expectation.
-            
-            \initial_params : (list) initial parameters to be provided to the minimising function.
-            
-            \draws : (int) number of times to sample in calculating expectation 
-            
-            \engine : (?) an Engine object to use.
-            
-            \verbose : (int or function) either an integer, describing the number of iterations between printing iteration params and expectation OR a function to be passed to the \callback method of the minimiser.
-            
-            \callback : (str) argument of minimiser to pass \verbose to.
-            
-            \full_output : (bool) whether to return final result as well as each iteration's params and expectations (True) or just the final result (None).
-            
-            '''
+        Params:
+
+        \ansatz : (function: params, engine -> qureg) function that prepares the state whose expectation in \hamiltonian we want to calculate, given parameters and an engine. Should return a qubit register created using the provided engine with the state prepared.
+
+        \hamiltonian : (QubitOperator) operator for which we want to calculate the expectation.
+
+        \initial_params : (list) initial parameters to be provided to the minimising function.
+
+        \draws : (int) number of times to sample in calculating expectation 
+
+        \engine : (?) an Engine object to use.
+
+        \verbose : (int or function) either an integer, describing the number of iterations between printing iteration params and expectation OR a function to be passed to the \callback method of the minimiser.
+
+        \callback : (str) argument of minimiser to pass \verbose to.
+
+        \full_output : (bool) whether to return final result as well as each iteration's params and expectations (True) or just the final result (None).
+
+        '''
         
         # Handle arguments
         types = [QubitOperator, list, int, MainEngine, str, bool]
@@ -83,7 +83,6 @@ class VQE(object):
                                    hamiltonian, draws, engine)
             
             self.iter_exps.append(exp)
-            verb_func(params)
             
             return exp
         
@@ -103,7 +102,7 @@ class VQE(object):
         
         # Apply
         argnames = self.minimiser.__code__.co_varnames
-        if callback in argnames and verbose is not None:
+        if (callback in argnames) and (verbose is not None):
             if isinstance(verbose, int):
                 self.min_kwargs[callback] = verb_func
             else:
@@ -122,13 +121,13 @@ class VQE(object):
     def even_ones(integer, relevant_inds):
         ''' Counts number of ones in \integer in the spots indicated by \relevant_inds. Returns true if even, false if odd.
             
-            Parameters:
-            
-            \integer : (int) number whose ones we want to count.
-            
-            \relevant_inds : (list) list of ints representing the indices in \integer whose ones we want to count.
-            
-            '''
+        Parameters:
+
+        \integer : (int) number whose ones we want to count.
+
+        \relevant_inds : (list) list of ints representing the indices in \integer whose ones we want to count.
+
+        '''
         
         # Integer with ones in the relevant inds
         ones_rel_inds = 0
@@ -144,19 +143,19 @@ class VQE(object):
     def expectation(self, prep_state, operator, draws, engine):
         ''' Measures, by sampling \draws times, the expectation value of the operator \operator in the state prepared by applying \prep_state on the initial state of all 0s (|000...>).
         
-            Note: currently assumes \prep_state has only one term of unit norm. There's a comment below where the assumption is used.
-            
-            Parameters:
-            
-            \prep_state : (function) takes in a QC engine, creates a qubit register and applies a series of operations on it. Returns the qubit register.
-            
-            \operator : (QubitOperator) operator whose expectation in state prepared by \prep_state we want to measure.
-            
-            \draws : (int) number of times we will sample to get expectation.
-            
-            \eng : (MainEngine) a quantum computing engine.
-            
-            '''
+        Note: currently assumes \prep_state has only one term of unit norm. There's a comment below where the assumption is used.
+
+        Parameters:
+
+        \prep_state : (function) takes in a QC engine, creates a qubit register and applies a series of operations on it. Returns the qubit register.
+
+        \operator : (QubitOperator) operator whose expectation in state prepared by \prep_state we want to measure.
+
+        \draws : (int) number of times we will sample to get expectation.
+
+        \eng : (MainEngine) a quantum computing engine.
+
+        '''
         
         # Get expectation, term by term
         ''' Each term in the operator will be made of Is, Xs, Ys and Zs. Measuring X is the same as rotating -pi/2 around Y and measuring Z. Measuring Y is the same as rotating +pi/2 around X and measuring Z. And measuring Z is just measuring Z. 
@@ -238,35 +237,32 @@ if __name__ == "__main__":
     
     from projectq.ops import H, X
     import time
+    from scipy.optimize import minimize
+    
+    vqe = VQE(minimize, [], {'method': 'Nelder-Mead'})
+    eng = MainEngine()
+    
     
     print('\nTesting expectation method. Expect to get -5.0...')
     
-    # First define a state_prep function. This should take our initialized state from
-    # |0 0 > ----> |+ 1 >
+    # Define a state_prep function: |0 0> -> |+ 1>
     def state_prep(eng):
         qureg = eng.allocate_qureg(2)
         H | qureg[0]
         X | qureg[1]
         return qureg
     
-    # Now let's create some example Hamiltonian. We'll use the Hamiltonian
-    # X*Z, where Z acts on the first qubit, Z acts on the second qubit
+    # And some convoluted hamiltonian
     hamiltonian_example = 3 * QubitOperator('X0 Z1') + QubitOperator('Y1') + 2 * QubitOperator('Z1')
     
-    # Let's just create an engine instance
-    eng_example = MainEngine()
-    
-    # All of the above should result in an expectation value of -5.0. Let's check it out:
+    # Should result in an expectation value of -5.0
     start = time.time()
-    exp = VQE().expectation(state_prep, hamiltonian_example, 1000, eng_example)
+    exp = vqe.expectation(state_prep, hamiltonian_example, 1000, eng)
     print('Expectation (calculated in', time.time() - start, 'seconds):\n', exp, '\n')
     
-    print('\nNow to run the VQE:')
     
-    from scipy.optimize import minimize
-    vqe = VQE(minimize, [], {'method': 'Nelder-Mead'})
+    print('\nNow to run the VQE. We will use Ry as the ansatz and Z as the hamiltonian (both acting on a single qubit). The minimum is at pi.')
     
-    print('\nUsing Ry (good starting value)...')
     def ansatz(params, eng):
         qureg = eng.allocate_qureg(1)
         Ry(params[0]) | qureg[0]
@@ -274,33 +270,27 @@ if __name__ == "__main__":
     
     hamiltonian = QubitOperator('Z0')
     
+    print('\nUsing a good starting value (3)...')
     start = time.time()
     result = vqe.run(ansatz, hamiltonian, [3],
-                    verbose = 10, callback = 'sdfgdah', full_output = True)
+                    verbose = 1, full_output = True)
     
     print('\nRan in', int(time.time() - start), 'with result', result[0]['x'], ':')
     print(result[0])
-    print('Len of exps and params is:', len(result[1]), len(result[2]))
+    print('\nLen of exps and params is:', len(result[1]), len(result[2]))
     print('Iter, Params, Exp:')
     for i in range(len(result[1])):
         print(i, result[1][i], result[2][i])
     
     
-    print('\n\n\nUsing Rx (bad starting value)...')
-    def ansatz(params, eng):
-        qureg = eng.allocate_qureg(1)
-        Rx(params[0]) | qureg[0]
-        return qureg
-    
-    hamiltonian = QubitOperator('Z0')
-    
+    print('\n\n\nUsing a bad starting value (0)...')
     start = time.time()
-    result = vqe.run(ansatz, hamiltonian, [0],
-                     verbose = 10, callback = 'sdfgdah', full_output = True)
+    result = vqe.run(ansatz, hamiltonian, [0], 
+                     verbose = 1, full_output = True)
     
     print('\nRan in', int(time.time() - start), 'with result', result[0]['x'], ':')
     print(result[0])
-    print('Len of exps and params is:', len(result[1]), len(result[2]))
+    print('\nLen of exps and params is:', len(result[1]), len(result[2]))
     print('Iter, Params, Exp:')
     for i in range(len(result[1])):
         print(i, result[1][i], result[2][i])
