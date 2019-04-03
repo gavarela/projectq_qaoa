@@ -23,7 +23,7 @@ def maxcut_cost_ham(graph):
   for i, j in graph.edges():
     operator_i = 'Z' + str(i)
     operator_j = 'Z' + str(j)
-    ham += QubitOperator(operator_i + ' ' + operator_j, -0.5) + QubitOperator('', 0.5)
+    ham += QubitOperator(operator_i + ' ' + operator_j, 0.5) + QubitOperator('', -0.5)
   return ham
   
 # Creates the MaxCut mixer hamiltonian given a graph
@@ -32,7 +32,7 @@ def maxcut_mixer_ham(graph):
   ham = QubitOperator('', 0.0)
   for i in graph.nodes():
     operator = 'X' + str(i)
-    ham += QubitOperator(operator)
+    ham += QubitOperator(operator, -1.0)
   return ham
 
 
