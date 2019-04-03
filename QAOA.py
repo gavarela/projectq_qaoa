@@ -1,8 +1,8 @@
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  Quantum Approximate Optimisation Algorithm
+#  Quantum Approximate Optimisation Algrithm
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-''' Inspired by Grove's pyQuil implementation. '''
+''' Inspired on Grove's pyQuil implementation. '''
 
 import projectq as pq
 from projectq import MainEngine
@@ -70,8 +70,12 @@ class QAOA(object):
             All(H) | qureg
             return qureg
         
+        default_mixer = 0 * QubitOperator('')
+        for q in range(self.n_qubits):
+            default_mixer += QubitOperator('X%i'%q)
+        
         self.init_state = init_state or default_init_state
-        self.mixer = mixer or QubitOperator(' '.join(['X' + str(i) for i in range(self.n_qubits)]))
+        self.mixer = mixer or default_mixer
         
         self.n_steps = n_steps
         self.betas = np.array(init_betas) or np.random.uniform(0, np.pi, self.n_steps)
@@ -150,17 +154,26 @@ class QAOA(object):
         
         return self.betas, self.gammas
     
-    def likely_string(self, draws = 500):
-        ''' Given the stored beta and gamma parameters (given initial ones or optimised ones if ran solve_angles()), samples prepared state to get most likely qubit string. '''
+    def likely_string(self, betas = None, gammas = None, draws = 500):
+        ''' Given the stored beta and gamma parameters (given initial ones or optimised ones if ran solve_angles()), samples prepared state to get most likely qubit string. 
+        
+        Parameters:
+        
+        \betas and \gammas: (lists of len \n_steps) containing parameter betas and gammas. Optional: if not provided will use stored betas and gammas.
+        
+        '''
+        
+        betas = betas or self.betas
+        gammas = gammas or self.gammas
         
         # Check types
-        if not isisntance(draws, int):
+        if not isinstance(draws, int):
             raise TypeError('Argument `draws` must be a positive integer.')
         if draws <= 0:
             raise ValueError('Argument `draws` must be a positive integer.')
         
         # Sample
-        params = list(self.betas) + list(self.gammas)
+        params = list(betas) + list(gammas)
         
         strings = {}
         for i in range(draws):
@@ -174,6 +187,8 @@ class QAOA(object):
             strings[string] = strings.get(string, 0) + 1
         
         # Return most common
+        print('strings is of len %i and is this:\n' %len(strings), strings)
+        
         res = max(strings.keys(), key = lambda s: strings[s])
         return res, strings[res]
         
@@ -182,45 +197,48 @@ class QAOA(object):
 ## ~~~~
 
 if __name__ == "__main__":
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # For this test, let's do a simple MaxCut example with the following graph:
-    # 0-1-2
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    # Just import networkx, useful for making graphs with edges and nodes
-    # import time to time our operations
-    import networkx as nx
+    
     import time
-
+    
+    ## Simple MaxCut Example (0-1-2 graph)
+    ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
     # Construct a graph with n nodes
     n = 3
-    G = nx.Graph()
-    G.add_nodes_from(list(range(0, n, 1)))
+    nodes = list(range(n))
 
-    # tuple is (i, j) where (i, j) is the edge
-    # This line just tells our graph how the edges are connected to each other
-    edge_list = [(0, 1), (1, 2)]
+    # edges are tuple is (i, j, weight) where i & j are the nodes
+    edges = [(nodes[i], nodes[i+1], 1) for i in range(n-1)]
 
-    # Feed the edges to our graph:
-    G.add_edges_from(edge_list)
-
-    # Now let's make our cost function (mixer handled as default argument already for QAOA MaxCut)
-    cost_example = QubitOperator('', 0.5) + QubitOperator('Z0 Z1', -0.5) + QubitOperator('', 0.5) + QubitOperator('Z1 Z2', -0.5)
-
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Put it all together, create a QAOA instance
-    # Use default initil state and mixer, put in our own cost
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    eng_example = MainEngine()
-    inst = QAOA(cost = cost_example, engine = eng_example, n_qubits = 3, vqe_run_kwargs = {'verbose': 1, 'draws': 100})
+    # Cost and mixer functions for QAOA
+    cost_example = 0 * QubitOperator('')
+    for i, j, w in edges:
+        cost_example += w/2 * (QubitOperator('') - QubitOperator('Z%i Z%i' %(i, j)))
     
+    mixer_example = 0 * QubitOperator('')
+    for node in nodes:
+        mixer_example += QubitOperator('X%i'%node)
+    
+    cost_example = -cost_example
+    mixer_example = -mixer_example
+    
+    # Run with QAOA
+    eng_example = MainEngine()
+    inst = QAOA(cost = cost_example, mixer = mixer_example,
+                engine = eng_example, 
+                vqe_run_kwargs = {'verbose': 1, 'draws': 100})
+    
+    print('Runnning QAOA now...')
     start = time.time()
     beta, gamma = inst.solve_angles()
     end = time.time()
-    print("Beta: {}, Gamma: {}, Time: {}".format(beta, gamma, end - start))
     
+    print("\nBeta: {}, Gamma: {}, Time: {} s.".format(beta, gamma, end - start))
+    
+    # Test it
+    draws = 1000
+    result = inst.likely_string(draws = draws)
+    print('\nMost likely string:', result[0], 'obtained %i/%i times.' %(result[1], draws))
     
     
     
