@@ -2,7 +2,7 @@
 #  Variational Quantum Eigensolver
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-''' Inspired on Grove's pyQuil implementation. '''
+''' Inspired by Grove's pyQuil implementation. '''
 
 import projectq as pq
 from projectq import MainEngine
@@ -194,11 +194,14 @@ class VQE(object):
 
                 # Measure
                 All(Measure) | qureg
-                engine.flush()
+                
 
                 # Results
                 result = int(''.join(str(int(q)) for q in reversed(qureg)))#, base = 2)
                 results[result] = results.get(result, 0) + 1
+                
+                # Deallocate Qubits
+                engine.flush(deallocate_qubits=True)
 
             # Process results
             ''' Our result is a string of 0s and 1s, for every qubit used. The result is the product of the eigenvalue of each qubit of interest (+1 for measured 0s, -1 for measured 1s). Thus, we count the 1s measured in our qubits of interest and check whether there's an even or odd number of them. This is equivalent to checking the parity of the result in the (qu)bits of interest. 
