@@ -2,7 +2,7 @@
 #  Quantum Approximate Optimisation Algrithm
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-''' Inspired on Grove's pyQuil implementation. '''
+''' Inspired by Grove's pyQuil implementation. '''
 
 import projectq as pq
 from projectq import MainEngine
@@ -181,10 +181,11 @@ class QAOA(object):
             qureg = self._prep_state(params, self.engine)
             All(Measure) | qureg
             
-            self.engine.flush()
             string = ''.join([str(int(q)) for q in reversed(qureg)])
             
             strings[string] = strings.get(string, 0) + 1
+            
+            self.engine.flush(deallocate_qubits=True)
         
         # Return most common
         print('strings is of len %i and is this:\n' %len(strings), strings)
@@ -207,13 +208,13 @@ if __name__ == "__main__":
     n = 3
     nodes = list(range(n))
 
-    # edges are tuple is (i, j, weight) where i & j are the nodes
-    edges = [(nodes[i], nodes[i+1], 1) for i in range(n-1)]
+    # edges are tuples (i, j) where i & j are the nodes
+    edges = [(nodes[i], nodes[i+1]) for i in range(n-1)]
 
     # Cost and mixer functions for QAOA
     cost_example = 0 * QubitOperator('')
-    for i, j, w in edges:
-        cost_example += w/2 * (QubitOperator('') - QubitOperator('Z%i Z%i' %(i, j)))
+    for i, j in edges:
+        cost_example += 1/2 * (QubitOperator('') - QubitOperator('Z%i Z%i' %(i, j)))
     
     mixer_example = 0 * QubitOperator('')
     for node in nodes:
