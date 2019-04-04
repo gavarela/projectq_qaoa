@@ -1,5 +1,5 @@
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  Quantum Approximate Optimisation Algrithm
+#  Quantum Approximate Optimisation Algorithm
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ''' Inspired by Grove's pyQuil implementation. '''
