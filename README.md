@@ -7,3 +7,5 @@ Build a QAOA module in Project Q language, including a VQE for internal use.
 `VQE.py` contains a Variational Quantum Eigensolver (VQE) class. The user inputs an initial quantum state, a hamiltonian whose lowest eigensate's eigenvalue we want to approximate, and the number of draws one wants to perform
 
 `GraphToHamiltonian.py` contains a bunch of functions for converting user-inputted graphs into hamiltonians for use in QAOA, VQE, etc. Right now the graphs must be networkx graphs, but we will add functionality for inputting lists of tuples defining the edges and nodes of a graph
+
+`QAOA for MaxCut Example.ipynb` contains an example implementation of using our QAOA to solve a MaxCut problem on a graph generated using functions from the `GraphToHamiltonian.py` file
